@@ -1,3 +1,5 @@
+
+
 K6 Tutorial
 ------------
 ------------
@@ -30,7 +32,7 @@ Simple Example(hello.js):
 import http from 'k6/http'
 import { sleep } from 'k6'
 
-export default function() {
+export default function() {              
 	http.get('http://test.k6.io');
 	sleep(1)
 }
@@ -67,11 +69,14 @@ In below path we can see the global level configuration
 
 C:/Users/<username>/AppData/Roaming/loadimpact/k6/config.json
 
-
 For mac
 /Users/username/Library/Application Support/loadimpact/k6/config.json
 Eg:
-/Users/username/Library/Application Support/loadimpact/k6/config.json
+/Users/qqa0400/Library/Application Support/loadimpact/k6/config.json
+
+or
+
+/User/<username>/
 
 
 
@@ -85,7 +90,7 @@ export let options = {        //In options we will mension about duration, users
 	duration: '60s'     //This is duration of performance test
 };
 
-export default function() {
+export default function() {       //What ever is inside default function, it will execute multiple times based on given options.
 	let res = http.get('http://test.k6.io');
 	console.log(res.status);      //to print the status code
 	sleep(5);
@@ -252,4 +257,308 @@ Now it will open the recorded script. We can have a look. We can copy paste this
 
 
 -------------
+
+
+
+Tutorial 4: Data parameterization
+---------------------
+
+We can read data from json or csv or faker liberary
+We need to use SharedArray from k6
+
+SharedArray is like a array which takes name and function
+It is read only constructor. It is not possible to communite between VUs (virtual users)
+we can use length or array[index] or for to iterate between shared array
+
+
+Sample script to show how SharedArray works
+
+import { SharedArray } from "k6/data";
+
+var data = new SharedArray("colors", function() {
+	return JSON.parse(open('./data.json')).tags;
+});
+
+export default () => {
+	
+}
+
+SharedArray store in memory only once. whenever we request for test data, it will make a copy and give the data
+
+
+Example with faker liberary:
+import faker from https://cdn.jsdelivr.net/gh/Marak/faker.js@master/examples/browser/js/faker.js';
+
+export default function() {
+	
+	console.log(faker.name.jobTitle());             //for every iteration the value of name will change
+	console.log(faker.name.jobDescription());
+	console.log(faker.name.jobArea());
+	console.log(faker.name.jobType());
+	
+}
+
+
+
+Example with json:
+Below is the content of data.json file
+{
+	"tags": [
+		"blue",
+		"green",
+		"red",
+		"white"
+	]
+}
+
+below is the contend of actual test file
+import http from 'k6/http';
+import { SharedArray } from 'k6/data';
+
+export let options = {
+	vus: 5,
+	duration: 10s,
+	iterations: 5
+}
+
+var data = new SharedArray("colors", function() {
+	return JSON.parse(open('./data.json')).tags;
+})
+
+var randomTag = data[Math.floor(Math.random() * data.length)];
+
+export default function() {
+	let response = http.get('http://myapi.com?name=${randomTag}');
+	console.log('VU ID: ${__VU}' + " - URL: " + response.url + " - status code: " + response.status);
+}
+
+
+
+Example with csv:
+below is the content of data.csv file
+username,password
+ram,12345
+babu,783433
+Mali, 782322
+
+Below is the content actual test file:
+import { SharedArray } from 'k6/data';
+import http from 'k6/http';
+import papaparse from "https://jslib.k6.io/papaparse/5.1.1/index.js";
+import encoding from 'k6/encoding'; //its for encoding. if encoding not needed, then we can remove all changes related to encoding
+
+export let options = {
+	vus: 5,
+	duration: '5s',
+	iterations: 5
+}
+
+const csvRead = new SharedArray('credentials', function(){
+	return papaparse.parse(open('./data.csv'), {header: true}).data;
+})
+
+export default funtion() {
+	var username = csvRead[Math.floor(Math.random() * csvRead.length)]['username'];
+	var password = csvRead[Math.floor(Math.random() * csvRead.length)]['password'];
+
+	var toBeEncoded = username + ':' + password;
+	var encodedString = encoding.b64encode(toBeEncoded);
+
+	let params = {
+		headers : {
+			'Authorization': 'Basic ' + encodedString;
+			'X-Requested-With': 'XmlHttpRequest';
+		}
+	};
+
+	let response = http.get("http://myapi.com/login", params);
+	console.log('Logging in using user name: ' + username + ' password: ' + password + ' statuscode: ' + response.status);
+}
+
+
+----------------
+
+Tutorial 5: Http methods
+---------------------
+
+We can call any http methods like get, post, put, patch, delete, options and others etc
+We also have request() and batch() method
+request() method will be used to call any type of method. we can send the method name in parameter
+batch() is used to send multiple request at same time parallelly
+k6 tag will be used to help to add the tag in result
+
+
+To call get:
+http.get('url')
+
+To call post:
+http.post('url', payload, headers)
+
+Eg:
+var response = http.post('http://myapi.com/api/user', JSON.stringify({"name":"ram","age":12}), headers: {"ContentType":"application/json"})
+response.json().name   //This how we will read the value in body
+response.status  //to get the status code
+response.headers['Allow']  //To get header
+
+Same goes for put, patch and other method as well
+
+
+request() is used to call any http method
+Eg:
+let response = http.request('GET', 'https://myapi.com/fda?name=fda')  //We can pass any method name or params
+
+
+
+To validate we can use check like below
+check(response, {
+	'is status code 204': (r) => r.status === 200
+})
+
+
+
+
+
+batch() - batch method is used to send multiple request parallelly
+Example:
+export default function() {
+	let responses = http.batch([
+		['GET', 'https://myapi.com/fda'],
+		['GET', 'https://myapi.com/fda?name=hai'],
+		['GET', 'https://myapi.com/style/main.css'],
+		['GET', 'https://myapi.com/static/photo.jpg'],
+		['GET', 'https://myapi.com/fda/dfafa/fdafa'],
+	])
+console.log(responses[0].status)   //using index value we can get the status code of particular api
+for(let i=0; i<responses.length; i++){
+	console.log(response[i].status)          //if need we can iterate like this
+}
+
+
+
+Example 2 for batch:
+import http from 'k6/http';
+import {check} from 'k6';
+
+export let options = {
+	batch: 5        //How many request should be called at a time in a batch. Default value is 20.
+	batchPerHost: 3  //How many request should be called in a batch for same host. Default value is 6
+}
+
+export default function() {
+	let req1 = {
+		method: 'GET',
+		url: "http://myapi.com/hai"
+	};
+
+	let req2 = {
+		method: 'GET',
+		url: "http://hey.com/nam"
+	};
+
+	let req3 = {
+		method: 'GET',
+		url: "http://goog.com/hai?nam=fda"
+	};
+
+	let response = http.batch([req1, req2, req3]);
+
+	check(response[0], {
+		'status code 200': (res) => res.status === 200
+	})
+
+	check(response[1], {
+		'status created 201': (res) => res.status === 201
+	})
+
+	check(response[2], {
+		'status delete 204': (res) => res.status === 204
+	})	
+
+}
+
+
+Example of batch with name:
+export default function() {
+	let requests = {
+		'get user': 'http://dcda.com/users'          //we can add the name for each request in a batch
+		'get price details': {
+			method: 'GET',
+			url: 'http://fda.cdm/fda/fdafda'
+		}
+	}
+
+	let responses = http.batch(requests);
+
+	console.log(response['get user'].status)         //using the same name we can get the values
+	console.log(response['get price details'].status)
+
+}
+
+
+-----------------
+
+
+Tutorial 6: Check
+------------------
+
+Check is like assertion
+check wont stop the test if it fails. it will store the result and give at the end
+we can check anything in response eg: status code, value in body, json body, and any other
+
+
+
+Example:
+import http from 'k6/http'
+import { check } from 'k6'
+
+export default function() {
+	let response = http.get('http://manjhkh.cd/iuhu/cda');
+
+	check(response, {
+		'validate status code 200': (r) => r.status === 200,         //to validate status
+		'validate status code not 400': (r) => r.status !== 40,       //to validate status code not equals
+		'validate age in body': (r) => (JSON.parse(r.body)).customer.age == "ram",     //to validate one value in json response
+		'validate date size in body': (r) => (JSON.parse(r.body)).data.length > 0,    //to validate size of the array data in json body
+		'validate body size less than 2000 byte': (r) => r.body.length <= 1030,      //to validate size of the body
+		'validate body includes name': (r) => r.body.includes('name')               //to validate whether it has given content in body
+	})
+}
+
+
+
+
+
+
+
+
+
+-------------------
+
+
+
+
+
+
+
+
+
+--------------------
+
+
+
+
+Notes:
+---
+
+by default it will run on port 6565. to change the port use below command
+Eg:
+k6 run filename.js --address=:73833   //we can give any other port also if default 6565 is already used by some other
+
+options - This is to give options related to run configuration and few validations
+check - related to validations
+
+-d 5s - to give duration in command line
+-u 4   - to give number of user in command line
+
+
 
