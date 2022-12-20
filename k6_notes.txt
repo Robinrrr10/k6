@@ -1,0 +1,253 @@
+K6 Tutorial
+------------
+------------
+------------
+
+
+https://www.youtube.com/playlist?list=PLJ9A48W0kpRJKmVeurt7ltKfrOdr8ZBdt
+
+https://www.youtube.com/playlist?list=PLJdv3RhAQXNHsC8OOV3ZjwZvC9tRoAYF2
+
+
+
+Tutorial 1: Getting started with k6
+------------------------------------
+K6 is the open source load testing tool
+its also called as load impact
+K6 is internally written in go language and we can use javascript for writing test cases
+
+We have two flavor of k6
+1. opensource - https://github.com/grafana/k6   - complete free
+2. cloud - https://k6.io - its commercial   - free for few days (tair)
+
+
+We can install k6 in linux, windows, mac or using docker
+
+
+
+Simple Example(hello.js):
+
+import http from 'k6/http'
+import { sleep } from 'k6'
+
+export.default function() {
+	http.get('http://test.k6.io');
+	sleep(1)
+}
+
+
+We can write any load testing using javascript
+It supports recording. We can record in chrome browser using the extension and we can use in k6
+It has CLI. So that we can integrate in cicd using the command
+It support multiple protocol
+It support multiple integration like grafana and other etc
+If need we can scale using k6 cloud
+
+
+
+
+To run the test:
+k6 run filename.js
+
+Eg:
+k6 run hello.js
+
+
+It will run the performance test and give the results
+
+
+
+k6 version       - This will show the version
+
+k6 help          - this will show available commands of k6 and its flags
+
+
+
+In below path we can see the global level configuration
+
+C:/Users/<username>/AppData/Roaming/loadimpact/k6/config.json
+
+or
+
+/User/<username>/
+
+
+
+Example(hello.js):
+
+import http from 'k6/http'
+import { sleep } from 'k6'
+
+export let options = {        //In options we will mension about duration, users, threshold conditions etc and more config etc
+	vus: 5,      //this is number of users
+	duration: '60s'     //This is duration of performance test
+};
+
+export.default function() {
+	let res = http.get('http://test.k6.io');
+	console.log(res.status);      //to print the status code
+	sleep(5);
+}
+
+
+Run using below command
+k6 run hello.js
+
+
+
+If we need we can give options like below
+
+
+export let options = {
+	stages: [
+		{duration: '5s', target: 1},
+		{duration: '10s', target: 3},
+		{duration: '5s', target: 1},
+	],
+	thresholds: {
+		http_req_duration: ['p(99) < 1000']         //Here we are giving condition to check that 99th percentile should be less than 1 sec. if not it will fail
+	}
+}
+
+
+we can also use below function inside defaul function to validation or to check
+
+let response = http.get('https://myapi.com');
+check(response, {
+	'status is 200': (r) => r.status ===200,            //This will check the status code is 200 or not
+	'order complete check': (r) => r.html('h3').text().includes('Your order is completed!')        // this will check whether response contains this string or not
+})
+
+
+For running in cloud we need to get the token from the k6 website and we need to config and then we can run using below commnad
+k6 cloud run filename.js        //This will upload the javascript file to the cloud and run the execution execution in cloud and we will get the result
+
+Eg:
+k6 cloud run hello.js
+
+And in the website, we can see the running tests, apis, failures, average response time and more
+We can able to compare the previous execution results as well
+We can deeply look on the api's, failures, checks, request details, analysis, scripts, logs and more
+K6 cloud provide lot of information to deep drive the analysis
+
+
+------
+
+
+
+Tutorial 2: Performance monitoring in netdata while running in k6
+----------------------------------------------------------------------
+
+netdata:
+Netdata is one of open source monitoring tool
+The setup of netdata is very easy. we can start with single command.
+There are multiple metrics
+We can get the metrics even for 1 sec
+I need we can add alerts.
+netdata can easily integrate with multiple tool.
+We can use dashboard to monitor all the metrics
+
+K6 can easily integrate with netdata tool.
+
+
+
+K6:
+It is open source performance testing tool.  In above tutorial it has more details
+
+
+netadata installation steps:
+We can get the installation command in below link
+https://learn.netdata.cloud/docs/agent/packaging/installer
+
+Eg:
+wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh
+or
+curl https://my-netdata.io/kickstart.sh > /tmp/netdata-kickstart.sh && sh /tmp/netdata-kickstart.sh
+
+Netdata will run on the port 19999
+you can use localhost:19999
+You can check on the browser
+
+
+k6 installation:
+In below link we can find the k6 installation setup
+https://k6.io/docs/get-started/installation/
+
+brew install k6         //this is to install k6 in mac
+
+type below command to check the version
+k6 version
+
+
+
+When running the performance testing include --out statsd to show the metrics in netdata. this will push the metrics to netdata using statsd
+
+k6 run --out statsd filename.js
+Eg:
+k6 run --out statsd hello.js
+
+
+There is a command to start/stop the netdata.
+
+
+write one sample test like below(hello.js)
+
+import http from 'k6/http'
+import { sleep } from 'k6'
+
+export.default function() {
+	http.get('http://test.k6.io');
+	sleep(1)
+}
+
+
+and run using below command
+k6 run --out stats hello.js
+
+// This will run the test and also it will push the metrics data
+
+Now we check on the localhost:19999 in browser, 
+We can see k6 there
+we can click the k6 and view all the metrics related to the performance test we ran
+
+
+To modify anything related to k6 netdata go to /etc/netdata and modify below below
+sudo ./edit-config statsd.d/k6/conf
+
+
+----
+
+
+Tutorial 3: Recording in k6 using browser extension
+--------------------------------------
+k6 browser extension is avaiable for chrome and firefox
+To add the extension, go to chrome store
+in search give k6 Browser Recorder
+now add this extension.
+
+//We should also have the account in k6 cloud. this is needed. its is not paid. just the signu is fine
+
+After adding, we should able to see the its extension icon in right of search input
+We can click on that extension icon to open the options
+If need we can enable Download Har file. it is for downloading the har file(all network calls)
+If need we can enable clear cache. This is clear the cache for last 7 days
+If need we can enable correlated request and responst. This will map between request and response
+
+To start recording, click start recording button. This will start the recording.
+Now we can do the action which needs to be captured. It will capture all network calls when we do any action. While recording wait for complete page to be loaded
+Once we done, then we can stop recording. This will automatically open in k6 cloud with recorded one
+
+We can give any name for the recording script
+We can give test builder or script editor. //Mostly we can go with script editor
+If we want to correlated request and response, then we can check correlate request and response option. if not, we can leave it
+enable/disable include static assert. this is for, whether we want to include static file or not. Eg: calling image, js file, css file, png, logo and more etc
+Enable/disable generate sleep.
+Enable/disable third party domain filtering. Whether we want to include thirdparty or not. Eg: googleapi, might be other domain etc. If we want to include, then we can check that domains, if not then dont check it
+now click on save option.
+
+Now it will open the recorded script. We can have a look. We can copy paste this recorded scipt and we can use it in our script. if we wanted to run on k6 cloud, then is also possible
+
+
+
+-------------
+
