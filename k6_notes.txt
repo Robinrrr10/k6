@@ -122,10 +122,10 @@ check(response, {
 
 
 For running in cloud we need to get the token from the k6 website and we need to config and then we can run using below commnad
-k6 cloud run filename.js        //This will upload the javascript file to the cloud and run the execution execution in cloud and we will get the result
+k6 cloud filename.js        //This will upload the javascript file to the cloud and run the execution execution in cloud and we will get the result
 
 Eg:
-k6 cloud run hello.js
+k6 cloud hello.js
 
 And in the website, we can see the running tests, apis, failures, average response time and more
 We can able to compare the previous execution results as well
