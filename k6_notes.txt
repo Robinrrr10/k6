@@ -30,7 +30,7 @@ Simple Example(hello.js):
 import http from 'k6/http'
 import { sleep } from 'k6'
 
-export.default function() {
+export default function() {
 	http.get('http://test.k6.io');
 	sleep(1)
 }
@@ -83,7 +83,7 @@ export let options = {        //In options we will mension about duration, users
 	duration: '60s'     //This is duration of performance test
 };
 
-export.default function() {
+export default function() {
 	let res = http.get('http://test.k6.io');
 	console.log(res.status);      //to print the status code
 	sleep(5);
@@ -195,7 +195,7 @@ write one sample test like below(hello.js)
 import http from 'k6/http'
 import { sleep } from 'k6'
 
-export.default function() {
+export default function() {
 	http.get('http://test.k6.io');
 	sleep(1)
 }
