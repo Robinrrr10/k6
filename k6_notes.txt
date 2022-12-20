@@ -67,9 +67,11 @@ In below path we can see the global level configuration
 
 C:/Users/<username>/AppData/Roaming/loadimpact/k6/config.json
 
-or
 
-/User/<username>/
+For mac
+/Users/username/Library/Application Support/loadimpact/k6/config.json
+Eg:
+/Users/username/Library/Application Support/loadimpact/k6/config.json
 
 
 
