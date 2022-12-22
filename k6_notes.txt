@@ -525,17 +525,207 @@ export default function() {
 }
 
 
+----------------
 
 
 
+Tutorial 7: Thresholds
+----------------------
+Threshold is used to validate different response related time and other
+Different between check and threshold is. check will validate and it will keep on running. In threshold it will fail if it reaches defined threshold
+Mostly used for validating response time related
+Threshold will be defined inside the options
+
+Eg:
+export const options = {
+	thresholds: {
+		http_req_duration: [{
+		threshold: 'p(95) < 100',   //Here it will check whether 95th percentile of response time is less than 100 milli sec or not
+		abortOnFail: true            //If above condition fail whether it should stop the test or not
+		}]
+	}
+}
+
+We have different metrics type
+1. Counter - it shows sum of cumulative addition
+2. Gauge   - It shows minimum, maximum and average value
+3. Rate    - It is percentage
+4. Trend   - It shows the calculative statisticks on the added value such as mininum, maximum, average and percentile
+Below link will give more details about different metrics
+https://k6.io/docs/using-k6/metrics/
+
+
+one more example:
+export const options = {
+	thresholds: {
+		http_req_blocked: [{      //http_req_blocked is one of the metrics
+			threshold: 'max < 200',
+			abortOnFail: true
+		}],
+		http_req_duration: [{      //http_req_duration is one of the metrics
+			threshold: 'p(95) < 1000',
+			abortOnFail: true
+		}]
+	}
+}
+
+
+we can type below command to get the status of last execution result (last exit code)
+$LASTEXITCODE
+//if it gives 0. then meaning it is pass.
+//if it gives other than 0. 99 or any other meaning it failed
 
 
 
+----------
 
--------------------
+Tutorial 8: Scenarios and Executors
+------------------------------------
+
+scenarios are used to create real world scenario of performance testing
+We can  control number of vus and iterations
+we can execute in parallel or sequence or both
+We can also have multiple scenarios in one file to create real world scenarios
+
+we need to add in options
+
+Eg:
+export const options = {
+	scenarios : {
+		my_scenario: {
+			executor: 'shared-iterations',
+			startTime: '10s',
+			gracefulStop: '5s',
+			vus: 10,
+			iterations: 2,
+			maxDuration: '10s',
+		},
+		another_scenario: {
+		...
+		... 
+		}
+	}
+}
 
 
 
+Different Executors:     //executors are  cpu of k6 work engine
+1. shared-iterations
+2. per-vu-iterations
+3. constant-vus
+4. ramping-vus
+5. constant-arrival-rate
+6. ramping-arrival-rate
+7. externally-controlled
+
+Mostly it will help to configure vus and iterations
+
+
+
+Example of per-vu-iterations:
+export const options = {
+	scenarios: {
+		my_per_vu_scenario: {   //as per below, Per virtual user will call 5. it will totally call 5 * 5 = 25 times
+			executor: 'per-vu-iterations',
+			vus: 5,
+			iterations: 5,
+			startTime: '3s'
+		}
+	}
+}
+
+
+Example of shared-iterations:
+export const options = {
+	scenarios: {
+		my_shared_iterations_scenario: {   //as per below, iterarions will be splitted to given vus to share. it is 5/5=1 per each vu. totally 5 calls
+			executor: 'shared-iterations',
+			vus: 5,
+			iterations: 5,
+			startTime: '3s'
+		}
+	}
+}
+
+
+Example of constant-vus:
+export const options = {
+	scenarios: {
+		my_constant_scenario: {   //here 5 uvs ( 5 users ) will call as many as possible iterations
+			executor: 'constant-vus',
+			vus: 5,
+			duration: '5s',
+			startTime: '0s'
+		}
+	}
+}
+
+
+Example of ramping-vus:
+export const options = {
+	scenarios: {
+		my_ramping_scenario: { // as per below Here it will changes / increases the users (vus) and try to achive till given target number of user (5 users). it will start from 1 users and slowly increase the users till 5 users in given duration
+			executor: 'ramping-vus',
+			startTime: '0s',
+			stages: [{
+				target: 5,
+				duration: '15s'
+			}]
+		}
+	}
+}
+
+
+Example of constant-arrival-scenario:
+export const options = {
+	scenarios: {
+		my_constant_arrival_scenario: {   //as per below, it will try to achive 5 iteration per sec. this also varies the uvs. can to till 10 users. but still try to keep average rate of 5
+			executor: 'constant-arrival-rate',
+			rate: 5,
+			duration: '20s',
+			preAllocateVUs: 5,
+			maxUVs: 10
+		}
+	}
+}
+
+
+Example of ramping-arrival-rate:
+export const options = {
+	scenarios: {
+		my_ramping_arrival_rate_scenario: {  // as per below, it will start with 2 user per sec and try to reach target of 15 users per sec. It can go maximum of 30 userrs to achive target. We can have multiple target and its duration if needed
+			executor: 'ramping-arrival-rate',
+			startRate: 2,
+			timeUnit: '1s',
+			preAllocatedVUs: 2,
+			maxVUs: 30,
+			stages: [{
+				target: 15,
+				duration: '30s'
+			}]
+		}
+	}
+}
+
+
+Example of externally-controlled-scenarios:
+export const options: {
+	scenarios: {
+		my_external_control_scenario: {    // externally-controlled executor are used to control the externally using the command. we can rampup or rampdown the users (uvs) or other config etc
+			executor: 'externally-controlled',
+			vus: 10,
+			maxVUs: 30,
+			duration: '2m'
+		}
+	}
+}
+//we can test above by two terminal. one for running this file. and other for giving the k6 command to control
+//using below command we can control when it was running
+k6 status              - this will give status of current scenario
+k6 scale --vus=15      - using scale command we can increase/decrease the users. here i have given 15 users. so it will increase from default 10 to 15
+k6 scale --vus=1       - this will scale down from 15 to 1 user
+k6 pause               - this is to pause the test
+k6 resume              - this is to resume the test
 
 
 
@@ -543,6 +733,17 @@ export default function() {
 
 
 --------------------
+
+
+comments:
+--------
+k6 run filename.js      - to run the tests
+k6 cloud filename.js     - to run in cloud
+k6 status               - to show the status
+k6 scale --vus=15        - to scale the virtual users to 15
+k6 pause                - to pause the execution
+k6 resume               - to resume the execution
+
 
 
 
@@ -559,6 +760,18 @@ check - related to validations
 
 -d 5s - to give duration in command line
 -u 4   - to give number of user in command line
+
+
+to run in rps and total duration, we can give like below
+
+export const options = {
+    rps: 3,                - 3 request per sec
+    duration: '10s',       - total duration is 10 sec
+  }
+
+
+
+
 
 
 
