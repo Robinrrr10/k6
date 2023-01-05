@@ -831,6 +831,71 @@ in logs we can see the console output
 
 
 
+------------
+
+To use like npm project:   link to refer: https://k6.io/docs/using-k6/modules/
+----------------------
+We cannot use k6 directly like nodejs or npm project. Also we cannot add the npm dependency directly. 
+We need to do below config if we wanted to create project like npm or nodejs
+
+
+Give below command to create the project:
+mkdir ./project-name && \
+    cd "$_" && \
+    npm init -y
+
+Give below command to install required dependencies:
+npm install --save-dev \
+    webpack \
+    webpack-cli \
+    k6 \
+    babel-loader \
+    @babel/core \
+    @babel/preset-env \
+    core-js
+
+
+Add webpack.config.js file in root of the project and add below content
+const path = require('path');
+
+module.exports = {
+  mode: 'production',
+  entry: {
+    login: './src/login.test.js',
+    signup: './src/signup.test.js',
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    libraryTarget: 'commonjs',
+    filename: '[name].bundle.js',
+  },
+  module: {
+    rules: [{ test: /\.js$/, use: 'babel-loader' }],
+  },
+  target: 'web',
+  externals: /k6(\/.*)?/,
+};
+
+
+In package.json add "bundle": "webpack" as script like below
+"scripts": {
+   "bundle": "webpack"
+  }
+
+
+Now use below command to create bundle
+npm run bundle
+//It will create the bundle and add the test as bundle in dist folder
+
+now use below command to run the test
+k6 run dist/bundlename.js
+Eg:
+k6 run dist/login.bundle.js
+
+
+--------------------
+
+
 
 
 --------------------
