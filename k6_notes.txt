@@ -729,6 +729,106 @@ k6 resume              - this is to resume the test
 
 
 
+-----------------
+
+
+Tutorial 9: Metrics and outputs
+--------------------------------
+
+build in metrics
+If need we can add our own custom metrics
+We can see all the metrics in console/terminal once the test was completed
+The metrics name starts with http_req are build in metrics
+
+
+There four types of metrics available in k6. using this we can create our own custom metrics. custom metrics also shown in console or terminal post run along with default metrics
+1. Counter - this will add the value(sum the value) and show the sum result
+2. Gauge - this show only the last value along with minimum and maximum
+3. Rate - this is used to show how many was pass and fail
+4. Trend - this will show average, minimum, maximum, median, percentile of 90 and 95th of response time in milli sec.
+
+
+Everything will be imported from k6/metrics
+Eg:
+import { Counter, Gauge, Rate, Trend } from 'k6/metrics';
+
+To create new metrics:
+const myMetrics = new(<metrics type>);
+myMetrics.add(<value>)
+
+
+By default k6 will show the metrics in console/terminal once the test was completed.
+we can still push the metrics to csv or json or k6 cloud, grafana, aws cloudwatch, influxdb or anyother
+
+
+Example:
+import { Counter, Gauge, Rate, Trend } from 'k6/metrics';
+
+const customTrend = new Trend("custom_duration");
+const customCounter = new Counter("custom_counter");
+const customGauge = new Gauge("custom_gauge");
+const customRate = new Rate("custom_rate");
+
+
+
+response.timing.duration - this will give response time
+//we will add this in custom trend metrics
+For custom trend metrics we will add the respone time (response.timing.duration)
+Eg:
+customTrend.add(response.timing.duration)
+
+
+in counter we will add the value. Customer counter will be used to show sum
+Eg:
+customCounter.add(2)
+customCounter.add(5)
+
+in rate we will add true or false or 1 or 0. true or 1 means pass. false or 0 means fails. True and 1 are same pass. false and 0 are same fail
+Eg:
+customRate.add(0)
+customRate.add(false)
+customRate.add(1)
+customRate.add(true)
+this will show 50% pass
+
+in gauge we will add the value. it will show last value along with min and max
+Eg:
+customGauge.add(1)
+customGauge.add(5)
+customGauge.add(10)
+This will show 10. with min 1 and max 10
+
+
+
+To run performance testing in k6 cloud use below command
+k6 cloud filename.js
+Eg:
+k6 cloud tutorial9CustomMetrics.js
+//It will give the link in console to view the performance result in cloud
+//To view the custom metrics, we can click on analysis. 
+//we can also compare result with old run by clicking compare result
+
+
+
+Below command will run the test in local and show the result in k6 cloud
+k6 run -o cloud filename.js
+Eg:
+k6 run -o cloud tutorial9CustomMetrics.js
+
+
+K6 cloud will give details of existing run and ongoing run.
+Able to get more details in k6 cloud
+
+We can see below in k6 cloud result:
+in performance view, it will show the metrics graph with response time and more
+in thershold will get threshold result
+in check we will get all checks result
+in http, we will get url, scenarios, method, number of request, status code, min and max response time, avg response time and standard deviation
+in analysis, we will get overview and customer metrics results
+in script we can see the script which is executed
+in logs we can see the console output
+
+
 
 
 
@@ -737,12 +837,13 @@ k6 resume              - this is to resume the test
 
 comments:
 --------
-k6 run filename.js      - to run the tests
-k6 cloud filename.js     - to run in cloud
-k6 status               - to show the status
-k6 scale --vus=15        - to scale the virtual users to 15
-k6 pause                - to pause the execution
-k6 resume               - to resume the execution
+k6 run filename.js          - to run the tests
+k6 cloud filename.js        - to run in k6 cloud
+k6 run -o cloud filename.js - to in local and show the result in k6 cloud
+k6 status                   - to show the status
+k6 scale --vus=15           - to scale the virtual users to 15
+k6 pause                    - to pause the execution
+k6 resume                   - to resume the execution
 
 
 
