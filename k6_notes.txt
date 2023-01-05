@@ -8,7 +8,8 @@ K6 Tutorial
 
 https://www.youtube.com/playlist?list=PLJ9A48W0kpRJKmVeurt7ltKfrOdr8ZBdt
 
-https://www.youtube.com/playlist?list=PLJdv3RhAQXNHsC8OOV3ZjwZvC9tRoAYF2
+K6 documentation link:
+https://k6.io/docs/
 
 
 
